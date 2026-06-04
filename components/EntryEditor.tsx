@@ -2,19 +2,21 @@
 'use client'
 
 import { useState } from 'react'
-import type { Mood } from '@/lib/firestore'
+import type { Mood } from '@/lib/types'
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
-  { value: 'great', emoji: '😄', label: 'Great' },
-  { value: 'good', emoji: '🙂', label: 'Good' },
-  { value: 'neutral', emoji: '😐', label: 'Neutral' },
-  { value: 'bad', emoji: '😔', label: 'Bad' },
+  { value: 'great',    emoji: '😄', label: 'Great'    },
+  { value: 'good',     emoji: '🙂', label: 'Good'     },
+  { value: 'neutral',  emoji: '😐', label: 'Neutral'  },
+  { value: 'bad',      emoji: '😔', label: 'Bad'      },
   { value: 'terrible', emoji: '😢', label: 'Terrible' },
 ]
 
 interface Props {
   initialContent?: string
   initialMood?: Mood
+  isEdit?: boolean
+  lastSavedAt?: Date | null
   onSave: (content: string, mood: Mood) => Promise<void>
   saving?: boolean
 }
@@ -22,27 +24,34 @@ interface Props {
 export default function EntryEditor({
   initialContent = '',
   initialMood = 'neutral',
+  isEdit = false,
+  lastSavedAt = null,
   onSave,
   saving = false,
 }: Props) {
   const [content, setContent] = useState(initialContent)
   const [mood, setMood] = useState<Mood>(initialMood)
-  const [saved, setSaved] = useState(false)
+  const [toast, setToast] = useState(false)
+
+  const canSave = content.trim().length >= 10
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!content.trim()) return
+    if (!canSave) return
     await onSave(content, mood)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    setToast(true)
+    setTimeout(() => setToast(false), 2000)
   }
+
+  const formatTime = (d: Date) =>
+    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Mood selector */}
       <div>
         <p className="mb-3 text-sm font-medium text-slate-400">How are you feeling today?</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {MOODS.map((m) => (
             <button
               key={m.value}
@@ -51,7 +60,7 @@ export default function EntryEditor({
               title={m.label}
               className={`flex flex-col items-center gap-1 rounded-xl border-2 px-3 py-2 text-2xl transition-all ${
                 mood === m.value
-                  ? 'border-slate-400 bg-slate-700 scale-105'
+                  ? 'scale-105 border-slate-400 bg-slate-700'
                   : 'border-transparent bg-slate-800 hover:border-slate-600 hover:bg-slate-700'
               }`}
             >
@@ -62,7 +71,7 @@ export default function EntryEditor({
         </div>
       </div>
 
-      {/* Text area */}
+      {/* Textarea */}
       <div className="flex flex-col gap-2">
         <label htmlFor="entry" className="text-sm font-medium text-slate-400">
           What&apos;s on your mind?
@@ -74,20 +83,41 @@ export default function EntryEditor({
           placeholder="Write freely — this space is just for you…"
           className="min-h-[60vh] w-full resize-y rounded-xl border border-slate-700 bg-slate-900 p-4 text-base text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
         />
+        <p className="text-right text-xs text-slate-600">
+          {content.length} character{content.length !== 1 ? 's' : ''}
+        </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Footer row */}
+      <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
-          disabled={saving || !content.trim()}
+          disabled={saving || !canSave}
           className="rounded-xl bg-slate-100 px-6 py-2.5 text-sm font-semibold text-slate-900 transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {saving ? 'Saving…' : 'Save entry'}
+          {saving ? 'Saving…' : isEdit ? 'Update Entry' : 'Save Entry'}
         </button>
-        {saved && (
-          <span className="text-sm text-emerald-400 animate-pulse">✓ Saved!</span>
+
+        {/* Green toast */}
+        <span
+          className={`text-sm font-medium text-emerald-400 transition-opacity duration-300 ${
+            toast ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          Entry saved ✓
+        </span>
+
+        {/* Last saved time */}
+        {lastSavedAt && !toast && (
+          <span className="text-xs text-slate-600">
+            Last saved: {formatTime(lastSavedAt)}
+          </span>
         )}
       </div>
+
+      {content.trim().length > 0 && content.trim().length < 10 && (
+        <p className="text-xs text-amber-500">Write at least 10 characters to save.</p>
+      )}
     </form>
   )
 }
