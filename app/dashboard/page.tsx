@@ -4,11 +4,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { getEntry, saveEntry } from '@/lib/firestore'
+import { getEntry, getEntries, saveEntry } from '@/lib/firestore'
 import type { Entry, Mood } from '@/lib/types'
 import AuthGuard from '@/components/AuthGuard'
 import NavBar from '@/components/NavBar'
 import EntryEditor from '@/components/EntryEditor'
+import MoodChart from '@/components/MoodChart'
+import StatsBar from '@/components/StatsBar'
 import { format } from 'date-fns'
 
 function todayString(): string {
@@ -26,6 +28,7 @@ export default function DashboardPage() {
 function Dashboard() {
   const [uid, setUid] = useState<string | null>(null)
   const [entry, setEntry] = useState<Entry | null>(null)
+  const [allEntries, setAllEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
@@ -39,26 +42,26 @@ function Dashboard() {
     return unsub
   }, [])
 
-  const fetchEntry = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!uid) return
     setLoading(true)
-    const e = await getEntry(uid, today)
+    const [e, all] = await Promise.all([
+      getEntry(uid, today),
+      getEntries(uid, 30),
+    ])
     setEntry(e)
-    if (e?.updatedAt) {
-      setLastSavedAt(e.updatedAt.toDate())
-    }
+    setAllEntries(all)
+    if (e?.updatedAt) setLastSavedAt(e.updatedAt.toDate())
     setLoading(false)
   }, [uid, today])
 
-  useEffect(() => {
-    fetchEntry()
-  }, [fetchEntry])
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleSave = async (content: string, mood: Mood) => {
     if (!uid) return
     setSaving(true)
     await saveEntry(uid, today, content, mood)
-    await fetchEntry()
+    await fetchData()
     setLastSavedAt(new Date())
     setSaving(false)
   }
@@ -86,14 +89,19 @@ function Dashboard() {
             <div className="h-6 w-6 animate-spin rounded-full border-4 border-slate-700 border-t-slate-300" />
           </div>
         ) : (
-          <EntryEditor
-            initialContent={entry?.content ?? ''}
-            initialMood={entry?.mood ?? 'neutral'}
-            isEdit={!!entry}
-            lastSavedAt={lastSavedAt}
-            onSave={handleSave}
-            saving={saving}
-          />
+          <div className="flex flex-col gap-10">
+            <EntryEditor
+              initialContent={entry?.content ?? ''}
+              initialMood={entry?.mood ?? 'neutral'}
+              isEdit={!!entry}
+              lastSavedAt={lastSavedAt}
+              onSave={handleSave}
+              saving={saving}
+            />
+
+            <StatsBar entries={allEntries} />
+            <MoodChart entries={allEntries} />
+          </div>
         )}
       </main>
     </>

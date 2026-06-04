@@ -35,6 +35,8 @@ export default function EntryEditor({
 
   const canSave = content.trim().length >= 10
 
+  const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSave) return
@@ -84,11 +86,11 @@ export default function EntryEditor({
           className="min-h-[60vh] w-full resize-y rounded-xl border border-slate-700 bg-slate-900 p-4 text-base text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
         />
         <p className="text-right text-xs text-slate-600">
-          {content.length} character{content.length !== 1 ? 's' : ''}
+          {content.length} character{content.length !== 1 ? 's' : ''} · {wordCount} word{wordCount !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {/* Footer row */}
+      {/* Footer */}
       <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
@@ -98,7 +100,6 @@ export default function EntryEditor({
           {saving ? 'Saving…' : isEdit ? 'Update Entry' : 'Save Entry'}
         </button>
 
-        {/* Green toast */}
         <span
           className={`text-sm font-medium text-emerald-400 transition-opacity duration-300 ${
             toast ? 'opacity-100' : 'opacity-0'
@@ -107,7 +108,6 @@ export default function EntryEditor({
           Entry saved ✓
         </span>
 
-        {/* Last saved time */}
         {lastSavedAt && !toast && (
           <span className="text-xs text-slate-600">
             Last saved: {formatTime(lastSavedAt)}
