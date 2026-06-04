@@ -21,11 +21,18 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#020617"
       },
-      "package": "com.dailyjournal.app"
+      "package": "com.dailyjournal.app",
+      "versionCode": 1,
+      "permissions": ["INTERNET"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-status-bar"]
+    "plugins": ["expo-status-bar"],
+    "extra": {
+      "eas": {
+        "projectId": "FILL_IN_AFTER_EAS_INIT"
+      }
+    }
   }
 }

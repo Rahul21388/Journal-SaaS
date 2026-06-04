@@ -56,15 +56,19 @@ export default function LoginPage() {
             {mode === 'login' ? 'Sign in' : 'Create account'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              <label
+                htmlFor="email"
+                className="text-xs font-medium uppercase tracking-wide text-slate-400"
+              >
                 Email
               </label>
               <input
                 id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -73,7 +77,10 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              <label
+                htmlFor="password"
+                className="text-xs font-medium uppercase tracking-wide text-slate-400"
+              >
                 Password
               </label>
               <input
@@ -81,6 +88,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 minLength={6}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -97,7 +105,11 @@ export default function LoginPage() {
               disabled={loading}
               className="mt-2 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+              {loading
+                ? 'Please wait…'
+                : mode === 'login'
+                ? 'Sign in'
+                : 'Create account'}
             </button>
           </form>
 
@@ -120,7 +132,11 @@ export default function LoginPage() {
 }
 
 function friendlyError(msg: string): string {
-  if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
+  if (
+    msg.includes('user-not-found') ||
+    msg.includes('wrong-password') ||
+    msg.includes('invalid-credential')
+  ) {
     return 'Invalid email or password.'
   }
   if (msg.includes('email-already-in-use')) {
