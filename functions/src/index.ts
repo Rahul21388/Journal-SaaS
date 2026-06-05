@@ -1,25 +1,42 @@
+// FILE: functions/src/index.ts
 import * as admin from 'firebase-admin'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { onRequest } from 'firebase-functions/v2/https'
 import { FieldValue } from 'firebase-admin/firestore'
 import { generateDigest, type Entry } from './claude'
-import { getCurrentWeekId, getWeekRange, formatDateYMD, getWeekIdForDate } from './weekId'
+import { getCurrentWeekId, getWeekRange, formatDateYMD } from './weekId'
+import { sendDigestEmail } from './email'
+import { APP_URL } from './secrets'
 
 // ── Firebase Admin init (singleton) ──────────────────────────────────────────
 if (!admin.apps.length) {
   admin.initializeApp()
 }
 const db = admin.firestore()
-const auth = admin.auth()
+const adminAuth = admin.auth()
+
+// ── Week label helper (no date-fns in functions) ─────────────────────────────
+function buildWeekLabel(weekId: string): string {
+  const { monday, sunday } = getWeekRange(weekId)
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const fmtShort = (d: Date) =>
+    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+  return `Week of ${fmtShort(monday)} – ${fmt(sunday)}`
+}
 
 // ── Shared digest-save logic ─────────────────────────────────────────────────
-async function buildAndSaveDigest(uid: string, weekId: string): Promise<string> {
+async function buildAndSaveDigest(
+  uid: string,
+  weekId: string
+): Promise<{ content: string; entryCount: number }> {
   const { monday, sunday } = getWeekRange(weekId)
   const mondayStr = formatDateYMD(monday)
   const sundayStr = formatDateYMD(sunday)
 
   const snap = await db
-    .collection('users').doc(uid)
+    .collection('users')
+    .doc(uid)
     .collection('entries')
     .where('date', '>=', mondayStr)
     .where('date', '<=', sundayStr)
@@ -30,15 +47,15 @@ async function buildAndSaveDigest(uid: string, weekId: string): Promise<string> 
     .map((d) => d.data() as Entry)
     .filter((e) => !e.deleted)
 
-  if (entries.length === 0) {
-    throw new Error('no_entries')
-  }
+  if (entries.length === 0) throw new Error('no_entries')
 
   const content = await generateDigest(entries)
 
   await db
-    .collection('users').doc(uid)
-    .collection('digests').doc(weekId)
+    .collection('users')
+    .doc(uid)
+    .collection('digests')
+    .doc(weekId)
     .set({
       uid,
       weekId,
@@ -48,24 +65,24 @@ async function buildAndSaveDigest(uid: string, weekId: string): Promise<string> 
       createdAt: FieldValue.serverTimestamp(),
     })
 
-  return content
+  return { content, entryCount: entries.length }
 }
 
 // ── Function 1: Weekly scheduled cron ────────────────────────────────────────
-// Runs every Sunday at 8:00 PM IST (14:30 UTC)
+// Runs every Sunday at 8:00 PM IST = 14:30 UTC
 export const weeklyDigestCron = onSchedule(
   {
-    schedule: '30 14 * * 0',   // cron: Sunday 14:30 UTC = 20:00 IST
+    schedule: '30 14 * * 0',
     timeZone: 'Asia/Kolkata',
-    secrets: ['ANTHROPIC_API_KEY'],
+    secrets: ['ANTHROPIC_API_KEY', 'RESEND_API_KEY'],
     memory: '512MiB',
     timeoutSeconds: 540,
   },
   async () => {
     const weekId = getCurrentWeekId()
+    const weekLabel = buildWeekLabel(weekId)
     console.log(`[weeklyDigestCron] Starting for weekId=${weekId}`)
 
-    // Fetch all user UIDs
     let userIds: string[] = []
     try {
       const usersSnap = await db.collection('users').get()
@@ -82,19 +99,45 @@ export const weeklyDigestCron = onSchedule(
 
     const results = await Promise.allSettled(
       userIds.map(async (uid) => {
-        // Skip if digest already exists for this week
+        // Skip if digest already exists
         const existingSnap = await db
-          .collection('users').doc(uid)
-          .collection('digests').doc(weekId)
+          .collection('users')
+          .doc(uid)
+          .collection('digests')
+          .doc(weekId)
           .get()
 
         if (existingSnap.exists) {
-          console.log(`[weeklyDigestCron] uid=${uid} already has digest for ${weekId}, skipping`)
+          console.log(`[weeklyDigestCron] uid=${uid} already has digest, skipping`)
           return 'skipped'
         }
 
-        await buildAndSaveDigest(uid, weekId)
-        console.log(`[weeklyDigestCron] uid=${uid} digest saved`)
+        // Generate + save digest
+        const { content, entryCount } = await buildAndSaveDigest(uid, weekId)
+        console.log(`[weeklyDigestCron] uid=${uid} digest saved (${entryCount} entries)`)
+
+        // Send email — failure must not affect digest save
+        try {
+          const userRecord = await adminAuth.getUser(uid)
+          const email = userRecord.email
+          if (email) {
+            await sendDigestEmail({
+              to: email,
+              weekLabel,
+              digestText: content,
+              entryCount,
+              weekId,
+              appUrl: APP_URL,
+            })
+            console.log(`[weeklyDigestCron] uid=${uid} email sent to ${email}`)
+          } else {
+            console.log(`[weeklyDigestCron] uid=${uid} has no email address, skipping email`)
+          }
+        } catch (emailErr) {
+          console.error(`[weeklyDigestCron] uid=${uid} email failed:`, emailErr)
+          // intentionally not re-throwing — digest is already saved
+        }
+
         return 'success'
       })
     )
@@ -106,11 +149,11 @@ export const weeklyDigestCron = onSchedule(
       } else {
         failed++
         const reason = result.reason as Error
-        if (reason?.message !== 'no_entries') {
-          console.error('[weeklyDigestCron] user failed:', reason?.message ?? reason)
-        } else {
-          skipped++ // no entries = skip, not failure
+        if (reason?.message === 'no_entries') {
+          skipped++
           failed--
+        } else {
+          console.error('[weeklyDigestCron] user failed:', reason?.message ?? reason)
         }
       }
     }
@@ -124,7 +167,7 @@ export const weeklyDigestCron = onSchedule(
 // ── Function 2: HTTP callable — manual trigger / testing ─────────────────────
 export const generateDigestHttp = onRequest(
   {
-    secrets: ['ANTHROPIC_API_KEY'],
+    secrets: ['ANTHROPIC_API_KEY', 'RESEND_API_KEY'],
     memory: '512MiB',
     timeoutSeconds: 120,
     cors: ['https://mydiary.rahulprakash.co.in', 'http://localhost:3000'],
@@ -135,7 +178,6 @@ export const generateDigestHttp = onRequest(
       return
     }
 
-    // ── Verify Firebase Auth token ──────────────────────────────────────────
     const authHeader = req.headers.authorization
     if (!authHeader?.startsWith('Bearer ')) {
       res.status(401).json({ success: false, error: 'Missing Authorization header' })
@@ -144,28 +186,27 @@ export const generateDigestHttp = onRequest(
 
     let uid: string
     try {
-      const decoded = await auth.verifyIdToken(authHeader.slice(7))
+      const decoded = await adminAuth.verifyIdToken(authHeader.slice(7))
       uid = decoded.uid
     } catch {
       res.status(401).json({ success: false, error: 'Invalid or expired token' })
       return
     }
 
-    // ── Determine weekId ────────────────────────────────────────────────────
     const body = req.body as { weekId?: string }
     const weekId = body.weekId ?? getCurrentWeekId()
 
-    const WEEK_ID_RE = /^\d{4}-W\d{2}$/
-    if (!WEEK_ID_RE.test(weekId)) {
+    if (!/^\d{4}-W\d{2}$/.test(weekId)) {
       res.status(400).json({ success: false, error: 'Invalid weekId format (expected YYYY-WXX)' })
       return
     }
 
-    // ── Rate limiting ───────────────────────────────────────────────────────
     const today = formatDateYMD(new Date())
     const rateLimitRef = db
-      .collection('users').doc(uid)
-      .collection('meta').doc('digestRateLimit')
+      .collection('users')
+      .doc(uid)
+      .collection('meta')
+      .doc('digestRateLimit')
 
     try {
       const snap = await rateLimitRef.get()
@@ -179,10 +220,8 @@ export const generateDigestHttp = onRequest(
         return
       }
 
-      // ── Generate ──────────────────────────────────────────────────────────
-      const digest = await buildAndSaveDigest(uid, weekId)
+      const { content: digest, entryCount } = await buildAndSaveDigest(uid, weekId)
 
-      // ── Update rate limit ─────────────────────────────────────────────────
       if (data && data.date === today) {
         await rateLimitRef.update({ count: FieldValue.increment(1) })
       } else {
@@ -190,15 +229,11 @@ export const generateDigestHttp = onRequest(
       }
 
       console.log(`[generateDigestHttp] uid=${uid} weekId=${weekId} digest generated`)
-      res.status(200).json({ success: true, digest, weekId })
+      res.status(200).json({ success: true, digest, weekId, entryCount })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Internal error'
       if (message === 'no_entries') {
-        res.status(200).json({
-          success: true,
-          digest: 'No entries found for this week.',
-          weekId,
-        })
+        res.status(200).json({ success: true, digest: 'No entries found for this week.', weekId })
         return
       }
       console.error('[generateDigestHttp] error:', err)
