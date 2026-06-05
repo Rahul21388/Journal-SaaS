@@ -6,7 +6,8 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { getUserProfile } from '@/lib/userProfile'
 import { getFeatures, isPro } from '@/lib/featureFlags'
-import type { UserProfile, Features } from '@/lib/types'
+import type { UserProfile } from '@/lib/types'
+import type { Features } from '@/lib/featureFlags'
 
 interface UseUserProfileResult {
   profile: UserProfile | null
