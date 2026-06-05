@@ -4,6 +4,7 @@ out/
 node_modules/
 .env.local
 .env
+.env.vercel
 
 # Expo / React Native
 mobile/node_modules/
