@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/history',   label: 'History'   },
+  { href: '/pricing',   label: 'Pricing'   },
   { href: '/digest',    label: 'Digest'    },
 ]
 

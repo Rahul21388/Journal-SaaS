@@ -15,6 +15,8 @@ import {
   summariseMoods,
 } from '@/lib/formatDigest'
 import { format } from 'date-fns'
+import { useUserProfile } from '@/app/hooks/useUserProfile'
+import Link from 'next/link'
 
 interface Digest {
   uid: string
@@ -42,6 +44,7 @@ export default function DigestPage() {
 }
 
 function DigestView() {
+  const { features } = useUserProfile()
   const [uid, setUid] = useState<string | null>(null)
   const [digests, setDigests] = useState<Digest[]>([])
   const [active, setActive] = useState<Digest | null>(null)
@@ -124,6 +127,41 @@ function DigestView() {
   }
 
   const alreadyHasThisWeek = digests.some((d) => d.weekId === currentWeekId)
+
+  if (!features.aiDigest) {
+    return (
+      <>
+        <NavBar />
+        <main className="mx-auto max-w-4xl px-4 py-10">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-white">AI Weekly Digest</h1>
+            <p className="mt-1 text-sm text-slate-500">Your week, reflected back to you.</p>
+          </header>
+          <div className="flex flex-col items-center gap-6 rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
+            <span className="text-5xl">✨</span>
+            <div>
+              <p className="text-xl font-semibold text-white">AI Weekly Digest is a Pro feature</p>
+              <p className="mt-2 max-w-sm text-sm text-slate-400">
+                Get personalised weekly reflections powered by Claude AI.
+              </p>
+            </div>
+            <ul className="flex flex-col gap-2 text-sm text-slate-400">
+              <li className="flex items-center gap-2"><span className="text-indigo-400">✓</span> Mood pattern analysis</li>
+              <li className="flex items-center gap-2"><span className="text-indigo-400">✓</span> Theme identification</li>
+              <li className="flex items-center gap-2"><span className="text-indigo-400">✓</span> Thoughtful reflection questions</li>
+            </ul>
+            <p className="text-sm text-slate-500">Available on Pro — ₹199/month or $3.99/month</p>
+            <Link
+              href="/pricing"
+              className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            >
+              Upgrade to Pro
+            </Link>
+          </div>
+        </main>
+      </>
+    )
+  }
 
   return (
     <>
