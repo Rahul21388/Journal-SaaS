@@ -1,5 +1,5 @@
 // FILE: app/layout.tsx
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import PostHogProvider from './posthog-provider'
 
@@ -16,8 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-// viewport and themeColor must be exported separately in Next.js 14
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
