@@ -11,6 +11,8 @@ import NavBar from '@/components/NavBar'
 import EntryEditor from '@/components/EntryEditor'
 import MoodChart from '@/components/MoodChart'
 import StatsBar from '@/components/StatsBar'
+import { useUserProfile } from '@/app/hooks/useUserProfile'
+import Link from 'next/link'
 import { format } from 'date-fns'
 
 function todayString(): string {
@@ -25,6 +27,25 @@ export default function DashboardPage() {
   )
 }
 
+function ProGate({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-xl border border-slate-800 bg-slate-900 px-6 py-10 text-center">
+      <span className="text-3xl">🔒</span>
+      <div>
+        <p className="font-semibold text-white">{title}</p>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
+      </div>
+      <Link
+        href="/pricing"
+        className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+      >
+        Upgrade to Pro
+      </Link>
+      <p className="text-xs text-slate-600">₹199/month · cancel anytime</p>
+    </div>
+  )
+}
+
 function Dashboard() {
   const [uid, setUid] = useState<string | null>(null)
   const [entry, setEntry] = useState<Entry | null>(null)
@@ -32,6 +53,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const { features } = useUserProfile()
 
   const today = todayString()
 
@@ -99,8 +121,18 @@ function Dashboard() {
               saving={saving}
             />
 
+            {/* StatsBar — available to all users */}
             <StatsBar entries={allEntries} />
-            <MoodChart entries={allEntries} />
+
+            {/* MoodChart — Pro only */}
+            {features.moodChart ? (
+              <MoodChart entries={allEntries} />
+            ) : (
+              <ProGate
+                title="Mood Chart"
+                description="Track your emotional patterns over time. Available on Pro."
+              />
+            )}
           </div>
         )}
       </main>

@@ -11,17 +11,18 @@ import NavBar from '@/components/NavBar'
 import EntryCard from '@/components/EntryCard'
 import Skeleton from '@/components/Skeleton'
 import CalendarHeatmap from '@/components/CalendarHeatmap'
+import { useUserProfile } from '@/app/hooks/useUserProfile'
 import Link from 'next/link'
 
 type Filter = 'all' | Mood
 
 const MOOD_TABS: { value: Filter; label: string }[] = [
-  { value: 'all',      label: 'All' },
-  { value: 'great',    label: '😄' },
-  { value: 'good',     label: '🙂' },
-  { value: 'neutral',  label: '😐' },
-  { value: 'bad',      label: '😔' },
-  { value: 'terrible', label: '😢' },
+  { value: 'all',      label: 'All'      },
+  { value: 'great',    label: '😄'       },
+  { value: 'good',     label: '🙂'       },
+  { value: 'neutral',  label: '😐'       },
+  { value: 'bad',      label: '😔'       },
+  { value: 'terrible', label: '😢'       },
 ]
 
 export default function HistoryPage() {
@@ -37,6 +38,7 @@ function History() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>('all')
+  const { features } = useUserProfile()
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -70,8 +72,26 @@ function History() {
           <Skeleton lines={3} />
         ) : (
           <div className="flex flex-col gap-6">
-            {/* Calendar heatmap */}
-            <CalendarHeatmap entries={entries} />
+            {/* CalendarHeatmap — Pro only */}
+            {features.moodChart ? (
+              <CalendarHeatmap entries={entries} />
+            ) : (
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔒</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Calendar Heatmap</p>
+                    <p className="text-xs text-slate-500">28-day mood overview. Available on Pro.</p>
+                  </div>
+                </div>
+                <Link
+                  href="/pricing"
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-500"
+                >
+                  Upgrade
+                </Link>
+              </div>
+            )}
 
             {/* Mood filter tabs */}
             <div className="flex flex-wrap gap-2">
@@ -86,9 +106,7 @@ function History() {
                     key={tab.value}
                     onClick={() => setFilter(tab.value)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-slate-800 text-white'
-                        : 'text-slate-500 hover:text-slate-300'
+                      isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
                     {tab.label}{' '}
