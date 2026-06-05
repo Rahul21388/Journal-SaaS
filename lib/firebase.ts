@@ -12,7 +12,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
+// Guard: only initialise Firebase in the browser.
+// During Next.js SSR/prerender, this module is imported server-side where
+// env vars may be absent. All actual Firebase calls are inside useEffect /
+// event handlers so the null placeholder is never used at runtime.
+const app =
+  typeof window !== 'undefined'
+    ? getApps().length
+      ? getApp()
+      : initializeApp(firebaseConfig)
+    : null
 
-export const auth = getAuth(app)
-export const db = getFirestore(app)
+export const auth = app
+  ? getAuth(app)
+  : (null as unknown as ReturnType<typeof getAuth>)
+
+export const db = app
+  ? getFirestore(app)
+  : (null as unknown as ReturnType<typeof getFirestore>)
