@@ -29,7 +29,7 @@ function computeStreaks(entries: Entry[]): { current: number; longest: number } 
   }
 
   // Longest streak: sort all dates and scan
-  const sorted = [...dates].sort()
+  const sorted = Array.from(dates).sort()
   let longest = 0
   let run = 0
   for (let i = 0; i < sorted.length; i++) {
