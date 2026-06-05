@@ -23,12 +23,20 @@
       },
       "package": "com.dailyjournal.app",
       "versionCode": 1,
-      "permissions": ["INTERNET"]
+      "permissions": ["INTERNET", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-status-bar"],
+    "plugins": [
+      "expo-status-bar",
+      ["expo-notifications", {
+        "icon": "./assets/icon.png",
+        "color": "#020617",
+        "defaultChannel": "digest"
+      }]
+    ],
     "extra": {
       "eas": {
         "projectId": "FILL_IN_AFTER_EAS_INIT"

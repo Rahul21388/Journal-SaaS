@@ -16,6 +16,10 @@ functions/lib/
 functions/node_modules/
 functions/.env
 
+# Firebase / Google credentials
+mobile/google-services.json
+mobile/GoogleService-Info.plist
+
 
 .DS_Store
 *.pem

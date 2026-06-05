@@ -6,6 +6,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { generateDigest, type Entry } from './claude'
 import { getCurrentWeekId, getWeekRange, formatDateYMD } from './weekId'
 import { sendDigestEmail } from './email'
+import { sendPushNotification } from './push'
 import { APP_URL } from './secrets'
 
 // ── Firebase Admin init (singleton) ──────────────────────────────────────────
@@ -15,17 +16,17 @@ if (!admin.apps.length) {
 const db = admin.firestore()
 const adminAuth = admin.auth()
 
-// ── Week label helper (no date-fns in functions) ─────────────────────────────
+// ── Week label helper ─────────────────────────────────────────────────────────
 function buildWeekLabel(weekId: string): string {
   const { monday, sunday } = getWeekRange(weekId)
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const fmtShort = (d: Date) =>
     d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
-  return `Week of ${fmtShort(monday)} – ${fmt(sunday)}`
+  const fmtFull = (d: Date) =>
+    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  return `Week of ${fmtShort(monday)} – ${fmtFull(sunday)}`
 }
 
-// ── Shared digest-save logic ─────────────────────────────────────────────────
+// ── Shared digest-build-and-save logic ───────────────────────────────────────
 async function buildAndSaveDigest(
   uid: string,
   weekId: string
@@ -69,7 +70,7 @@ async function buildAndSaveDigest(
 }
 
 // ── Function 1: Weekly scheduled cron ────────────────────────────────────────
-// Runs every Sunday at 8:00 PM IST = 14:30 UTC
+// Every Sunday 20:00 IST = 14:30 UTC
 export const weeklyDigestCron = onSchedule(
   {
     schedule: '30 14 * * 0',
@@ -99,7 +100,7 @@ export const weeklyDigestCron = onSchedule(
 
     const results = await Promise.allSettled(
       userIds.map(async (uid) => {
-        // Skip if digest already exists
+        // Skip if digest already exists this week
         const existingSnap = await db
           .collection('users')
           .doc(uid)
@@ -112,30 +113,49 @@ export const weeklyDigestCron = onSchedule(
           return 'skipped'
         }
 
-        // Generate + save digest
+        // ── 1. Generate + save digest ──────────────────────────────────────
         const { content, entryCount } = await buildAndSaveDigest(uid, weekId)
         console.log(`[weeklyDigestCron] uid=${uid} digest saved (${entryCount} entries)`)
 
-        // Send email — failure must not affect digest save
+        // ── 2. Send email — isolated failure ──────────────────────────────
         try {
           const userRecord = await adminAuth.getUser(uid)
-          const email = userRecord.email
-          if (email) {
+          if (userRecord.email) {
             await sendDigestEmail({
-              to: email,
+              to: userRecord.email,
               weekLabel,
               digestText: content,
               entryCount,
               weekId,
               appUrl: APP_URL,
             })
-            console.log(`[weeklyDigestCron] uid=${uid} email sent to ${email}`)
-          } else {
-            console.log(`[weeklyDigestCron] uid=${uid} has no email address, skipping email`)
+            console.log(`[weeklyDigestCron] uid=${uid} email sent to ${userRecord.email}`)
           }
         } catch (emailErr) {
           console.error(`[weeklyDigestCron] uid=${uid} email failed:`, emailErr)
-          // intentionally not re-throwing — digest is already saved
+        }
+
+        // ── 3. Send push notification — isolated failure ───────────────────
+        try {
+          const tokenSnap = await db
+            .collection('users')
+            .doc(uid)
+            .collection('meta')
+            .doc('pushToken')
+            .get()
+
+          if (tokenSnap.exists) {
+            const { token } = tokenSnap.data() as { token: string }
+            await sendPushNotification({
+              expoPushToken: token,
+              title: '📔 Your Weekly Digest is Ready',
+              body: 'Your AI-powered journal reflection for this week is here.',
+              data: { weekId, screen: 'digest' },
+            })
+            console.log(`[weeklyDigestCron] uid=${uid} push notification sent`)
+          }
+        } catch (pushErr) {
+          console.error(`[weeklyDigestCron] uid=${uid} push failed:`, pushErr)
         }
 
         return 'success'
@@ -153,7 +173,7 @@ export const weeklyDigestCron = onSchedule(
           skipped++
           failed--
         } else {
-          console.error('[weeklyDigestCron] user failed:', reason?.message ?? reason)
+          console.error('[weeklyDigestCron] user pipeline failed:', reason?.message ?? reason)
         }
       }
     }
