@@ -27,9 +27,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <meta name="theme-color" content="#0f172a" />
-      </head>
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
         <PostHogProvider>{children}</PostHogProvider>
       </body>
