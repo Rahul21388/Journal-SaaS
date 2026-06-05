@@ -3,10 +3,9 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { signOut } from 'firebase/auth'
+import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
 
 export default function NavBar() {
   const router = useRouter()
@@ -39,15 +38,18 @@ export default function NavBar() {
           📓 DailyJournal
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Link href="/dashboard" className={linkClass('/dashboard')}>
             Dashboard
           </Link>
           <Link href="/history" className={linkClass('/history')}>
             History
           </Link>
+          <Link href="/digest" className={linkClass('/digest')}>
+            Digest
+          </Link>
           {email && (
-            <span className="hidden text-xs text-slate-500 md:block">{email}</span>
+            <span className="hidden text-xs text-slate-500 md:block ml-2">{email}</span>
           )}
           <button
             onClick={handleSignOut}
