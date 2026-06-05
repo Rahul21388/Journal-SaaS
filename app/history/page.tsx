@@ -85,7 +85,7 @@ function History() {
                   </div>
                 </div>
                 <Link
-                  href="/pricing"
+                  href="/upgrade"
                   className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-500"
                 >
                   Upgrade

@@ -36,7 +36,7 @@ function ProGate({ title, description }: { title: string; description: string })
         <p className="mt-1 text-sm text-slate-500">{description}</p>
       </div>
       <Link
-        href="/pricing"
+        href="/upgrade"
         className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
       >
         Upgrade to Pro

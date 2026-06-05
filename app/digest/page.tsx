@@ -152,7 +152,7 @@ function DigestView() {
             </ul>
             <p className="text-sm text-slate-500">Available on Pro — ₹199/month or $3.99/month</p>
             <Link
-              href="/pricing"
+              href="/upgrade"
               className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
             >
               Upgrade to Pro
