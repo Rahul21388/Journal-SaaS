@@ -11,7 +11,12 @@ mobile/node_modules/
 mobile/.expo/
 mobile/dist/
 
-# Misc
+# Firebase Functions
+functions/lib/
+functions/node_modules/
+functions/.env
+
+
 .DS_Store
 *.pem
 npm-debug.log*
