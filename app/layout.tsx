@@ -14,13 +14,15 @@ export const metadata: Metadata = {
     description: 'Your private journal with AI-powered weekly insights',
     type: 'website',
   },
+}
+
+// viewport and themeColor must be exported separately in Next.js 14
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#0f172a',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
