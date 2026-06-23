@@ -1,11 +1,12 @@
 // FILE: app/login/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  onAuthStateChanged,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { ensureUserProfile } from '@/lib/userProfile'
@@ -15,6 +16,14 @@ type Mode = 'login' | 'register'
 export default function LoginPage() {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('login')
+
+  // Redirect already-authenticated users away from /login
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace('/dashboard')
+    })
+    return unsub
+  }, [router])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

@@ -228,10 +228,7 @@ function ResultCard({ result, query }: { result: SearchResult; query: string }) 
   } catch { /* keep raw date */ }
 
   return (
-    <Link
-      href={`/history`}
-      className="block rounded-xl border border-slate-800 bg-slate-900 px-5 py-4 transition hover:border-slate-700"
-    >
+    <div className="rounded-xl border border-slate-800 bg-slate-900 px-5 py-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-300">{dateLabel}</p>
         <span
@@ -243,7 +240,7 @@ function ResultCard({ result, query }: { result: SearchResult; query: string }) 
       <p className="text-sm leading-relaxed text-slate-400">
         <HighlightedExcerpt excerpt={result.excerpt} query={query} />
       </p>
-    </Link>
+    </div>
   )
 }
 

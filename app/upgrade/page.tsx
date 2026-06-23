@@ -209,25 +209,28 @@ function SuccessScreen() {
         {[...Array(8)].map((_, i) => (
           <span
             key={i}
-            className="absolute h-2 w-2 rounded-full"
+            className="absolute h-2 w-2 rounded-full confetti-dot"
             style={{
               background: ['#6366f1','#34d399','#f59e0b','#f472b6','#38bdf8','#a78bfa','#fb923c','#4ade80'][i],
               top: '50%',
               left: '50%',
-              transform: `rotate(${i * 45}deg) translate(40px) rotate(-${i * 45}deg)`,
-              animation: 'confetti-pop 0.6s ease-out forwards',
+              // Pass the rotation angle as a CSS custom property used by the keyframe
+              ['--r' as string]: `${i * 45}deg`,
               animationDelay: `${i * 60}ms`,
-              opacity: 0,
             }}
           />
         ))}
       </div>
 
       <style>{`
+        .confetti-dot {
+          opacity: 0;
+          animation: confetti-pop 0.7s ease-out forwards;
+        }
         @keyframes confetti-pop {
-          0%   { transform: rotate(var(--r, 0deg)) translate(0px) scale(0); opacity: 1; }
+          0%   { transform: rotate(var(--r)) translate(0px) scale(0); opacity: 1; }
           60%  { opacity: 1; }
-          100% { transform: rotate(var(--r, 0deg)) translate(55px) scale(1); opacity: 0; }
+          100% { transform: rotate(var(--r)) translate(55px) scale(1); opacity: 0; }
         }
       `}</style>
 

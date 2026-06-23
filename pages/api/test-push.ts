@@ -1,7 +1,5 @@
 // FILE: pages/api/test-push.ts
-//
-// TODO: Remove this route before going to production.
-// Unauthenticated by design — for local push template testing only.
+// Restricted to admin use only — requires ADMIN_SECRET header to match env var.
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Expo } from 'expo-server-sdk'
@@ -15,6 +13,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SuccessResponse | ErrorResponse>
 ) {
+  // Gate behind admin secret — prevents unauthenticated use in production
+  const adminSecret = process.env.ADMIN_SECRET
+  if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' })
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ success: false, error: 'Method not allowed' })

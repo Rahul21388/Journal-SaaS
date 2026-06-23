@@ -36,6 +36,12 @@ export default async function handler(
     return res.status(401).json({ error: 'Invalid or expired token' })
   }
 
+  // ── Pro gate ──────────────────────────────────────────────────────────────
+  const userSnap = await adminDb.collection('users').doc(uid).get()
+  if (userSnap.data()?.plan !== 'pro') {
+    return res.status(403).json({ error: 'AI digest is a Pro feature' })
+  }
+
   // ── Validate body ─────────────────────────────────────────────────────────
   const { weekId } = req.body as { weekId?: string }
   if (!weekId || !WEEK_ID_RE.test(weekId)) {
