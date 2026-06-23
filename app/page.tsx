@@ -55,7 +55,7 @@ const FEATURES = [
   {
     icon: '🤖',
     title: 'AI weekly digest',
-    desc: 'Claude reads your week and reflects it back — patterns you'd never notice yourself.',
+    desc: `Claude reads your week and reflects it back — patterns you'd never notice yourself.`,
     pro: true,
   },
   {
