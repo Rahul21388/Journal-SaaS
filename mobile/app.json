@@ -2,6 +2,7 @@
   "expo": {
     "name": "Daily Journal",
     "slug": "daily-journal-ai",
+    "scheme": "dailyjournal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
