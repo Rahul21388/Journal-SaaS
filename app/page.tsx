@@ -379,7 +379,7 @@ function Pricing() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Free */}
-          <FadeIn delay={0}>
+          <FadeIn delay={0} className="h-full">
             <div className="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-900 p-8">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Free</p>
               <div className="mt-4 flex items-end gap-1">
@@ -407,7 +407,7 @@ function Pricing() {
           </FadeIn>
 
           {/* Pro */}
-          <FadeIn delay={100}>
+          <FadeIn delay={100} className="h-full">
             <div className="relative flex h-full flex-col rounded-2xl border-2 border-indigo-600 bg-slate-900 p-8">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1 text-xs font-bold uppercase tracking-wide text-white">
                 Most Popular
