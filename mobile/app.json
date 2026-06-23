@@ -12,36 +12,45 @@
       "resizeMode": "contain",
       "backgroundColor": "#020617"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.dailyjournal.app"
+      "bundleIdentifier": "com.rahulprakash.dailyjournal"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#020617"
       },
-      "package": "com.dailyjournal.app",
+      "package": "com.rahulprakash.dailyjournal",
       "versionCode": 1,
-      "permissions": ["INTERNET", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
+      "permissions": [
+        "INTERNET",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
       "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar",
-      ["expo-notifications", {
-        "icon": "./assets/icon.png",
-        "color": "#020617",
-        "defaultChannel": "digest"
-      }]
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#020617",
+          "defaultChannel": "digest"
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "FILL_IN_AFTER_EAS_INIT"
+        "projectId": "2903a8ca-310e-4809-b02e-7ef31fc6a402"
       }
-    }
+    },
+    "owner": "rahul_prakash"
   }
 }
