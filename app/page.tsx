@@ -377,10 +377,10 @@ function Pricing() {
           <p className="mt-3 text-slate-500">Start free. Upgrade when you're ready for insights.</p>
         </FadeIn>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 items-stretch">
           {/* Free */}
           <FadeIn delay={0} className="h-full">
-            <div className="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-900 p-8">
+            <div className="flex flex-col h-full rounded-2xl border border-slate-800 bg-slate-900 p-8">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Free</p>
               <div className="mt-4 flex items-end gap-1">
                 <span className="text-4xl font-bold text-white">₹0</span>
@@ -388,27 +388,31 @@ function Pricing() {
               </div>
               <p className="mt-2 text-sm text-slate-500">Everything you need to build the habit.</p>
 
-              <ul className="mt-8 flex flex-col gap-3">
-                {FREE_FEATURES.map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
-                    <span className="text-slate-500">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex-1">
+                <ul className="mt-8 flex flex-col gap-3">
+                  {FREE_FEATURES.map((f) => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
+                      <span className="text-slate-500">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-              <Link
-                href="/login"
-                className="mt-auto pt-8 block rounded-xl border border-slate-700 py-2.5 text-center text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
-              >
-                Get started free
-              </Link>
+              <div className="mt-auto pt-8">
+                <Link
+                  href="/login"
+                  className="block rounded-xl border border-slate-700 py-2.5 text-center text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
+                >
+                  Get started free
+                </Link>
+              </div>
             </div>
           </FadeIn>
 
           {/* Pro */}
           <FadeIn delay={100} className="h-full">
-            <div className="relative flex h-full flex-col rounded-2xl border-2 border-indigo-600 bg-slate-900 p-8">
+            <div className="relative flex flex-col h-full rounded-2xl border-2 border-indigo-600 bg-slate-900 p-8">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1 text-xs font-bold uppercase tracking-wide text-white">
                 Most Popular
               </div>
@@ -423,24 +427,28 @@ function Pricing() {
               </div>
               <p className="mt-2 text-sm text-slate-500">Full AI-powered journaling with deep insights.</p>
 
-              <ul className="mt-8 flex flex-col gap-3">
-                {PRO_FEATURES.map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
-                    <span className="text-indigo-400">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex-1">
+                <ul className="mt-8 flex flex-col gap-3">
+                  {PRO_FEATURES.map((f) => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
+                      <span className="text-indigo-400">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-              <Link
-                href="/upgrade"
-                className="mt-auto pt-8 block rounded-xl bg-indigo-600 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
-              >
-                Upgrade to Pro
-              </Link>
-              <p className="mt-3 text-center text-xs text-slate-600">
-                Secure payment via Razorpay · Cancel anytime
-              </p>
+              <div className="mt-auto pt-8">
+                <Link
+                  href="/upgrade"
+                  className="block rounded-xl bg-indigo-600 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
+                >
+                  Upgrade to Pro
+                </Link>
+                <p className="mt-3 text-center text-xs text-slate-600">
+                  Secure payment via Razorpay · Cancel anytime
+                </p>
+              </div>
             </div>
           </FadeIn>
         </div>
