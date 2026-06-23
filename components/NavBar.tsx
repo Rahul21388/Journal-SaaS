@@ -6,12 +6,14 @@ import { useRouter, usePathname } from 'next/navigation'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useEffect, useState } from 'react'
+import { useUserProfile } from '@/app/hooks/useUserProfile'
 
-const NAV_LINKS = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/history',   label: 'History'   },
-  { href: '/pricing',   label: 'Pricing'   },
-  { href: '/digest',    label: 'Digest'    },
+const BASE_NAV_LINKS = [
+  { href: '/dashboard', label: 'Dashboard', proOnly: false },
+  { href: '/history',   label: 'History',   proOnly: false },
+  { href: '/pricing',   label: 'Pricing',   proOnly: false },
+  { href: '/search',    label: 'Search',    proOnly: true  },
+  { href: '/digest',    label: 'Digest',    proOnly: false },
 ]
 
 export default function NavBar() {
@@ -19,6 +21,10 @@ export default function NavBar() {
   const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { features } = useUserProfile()
+
+  // Build nav links — Search only shown to Pro users
+  const NAV_LINKS = BASE_NAV_LINKS.filter((l) => !l.proOnly || features.fullTextSearch)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
