@@ -62,12 +62,11 @@ export default async function handler(
     return res.status(403).json({ error: 'Full-text search is a Pro feature' })
   }
 
-  // Fetch all non-deleted entries
+  // Fetch all entries — filter deleted in JS to avoid composite index requirement
   const snap = await adminDb
     .collection('users')
     .doc(uid)
     .collection('entries')
-    .where('deleted', '!=', true)
     .get()
 
   const results: SearchResult[] = []
@@ -80,6 +79,7 @@ export default async function handler(
       deleted?: boolean
     }
 
+    if (data.deleted === true) continue
     if (!data.content) continue
     if (!data.content.toLowerCase().includes(q.toLowerCase())) continue
 
