@@ -1,7 +1,7 @@
 // FILE: app/upgrade/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { auth } from '@/lib/firebase'
 import { loadRazorpayScript } from '@/lib/razorpay'
 import type { RazorpayResponse } from '@/lib/razorpay'
