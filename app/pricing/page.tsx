@@ -1,7 +1,7 @@
 // FILE: app/pricing/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import NavBar from '@/components/NavBar'
 
@@ -42,6 +42,8 @@ type Region = 'india' | 'global'
 
 export default function PricingPage() {
   const [region, setRegion] = useState<Region>('india')
+
+  useEffect(() => { document.title = 'Pricing | Daily Journal' }, [])
 
   return (
     <>

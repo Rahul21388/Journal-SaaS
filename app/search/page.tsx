@@ -45,6 +45,8 @@ function SearchView() {
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => { document.title = 'Search | Daily Journal' }, [])
+
   // Debounced search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)

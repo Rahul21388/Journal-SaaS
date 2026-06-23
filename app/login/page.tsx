@@ -17,6 +17,8 @@ export default function LoginPage() {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('login')
 
+  useEffect(() => { document.title = 'Login | Daily Journal' }, [])
+
   // Redirect already-authenticated users away from /login
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {

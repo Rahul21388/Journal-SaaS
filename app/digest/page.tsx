@@ -55,6 +55,8 @@ function DigestView() {
 
   const currentWeekId = getCurrentWeekId()
 
+  useEffect(() => { document.title = 'Digest | Daily Journal' }, [])
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) setUid(user.uid)

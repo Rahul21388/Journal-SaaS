@@ -40,6 +40,8 @@ function History() {
   const [filter, setFilter] = useState<Filter>('all')
   const { features } = useUserProfile()
 
+  useEffect(() => { document.title = 'History | Daily Journal' }, [])
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) setUid(user.uid)

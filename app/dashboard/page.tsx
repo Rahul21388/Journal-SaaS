@@ -57,6 +57,8 @@ function Dashboard() {
 
   const today = todayString()
 
+  useEffect(() => { document.title = 'Dashboard | Daily Journal' }, [])
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) setUid(user.uid)

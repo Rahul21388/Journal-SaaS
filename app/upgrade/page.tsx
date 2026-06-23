@@ -32,6 +32,8 @@ function UpgradeFlow() {
   const [step, setStep] = useState<Step>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
+  useEffect(() => { document.title = 'Upgrade to Pro | Daily Journal' }, [])
+
   const handleUpgrade = async () => {
     setStep('creating')
     setErrorMsg('')
