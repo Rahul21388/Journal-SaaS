@@ -494,8 +494,8 @@ function Footer() {
             <p className="mt-1 text-xs text-slate-600">Built with ❤️ in India</p>
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-500">
-            <a href="#" className="transition hover:text-slate-300">Privacy Policy</a>
-            <a href="#" className="transition hover:text-slate-300">Terms of Service</a>
+            <a href="https://rahulprakash.co.in/apps/dailyjournal/privacy" target="_blank" rel="noopener noreferrer" className="transition hover:text-slate-300">Privacy Policy</a>
+            <a href="https://rahulprakash.co.in/apps/dailyjournal/terms" target="_blank" rel="noopener noreferrer" className="transition hover:text-slate-300">Terms of Service</a>
           </div>
         </div>
         <p className="mt-8 text-center text-xs text-slate-700">
