@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { ensureUserProfile } from '@/lib/userProfile'
@@ -26,10 +27,16 @@ export default function LoginPage() {
     })
     return unsub
   }, [router])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const [showReset, setShowReset] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [resetError, setResetError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,6 +66,20 @@ export default function LoginPage() {
     }
   }
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setResetStatus('sending')
+    setResetError('')
+    try {
+      await sendPasswordResetEmail(auth, resetEmail)
+      setResetStatus('sent')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      setResetError(friendlyResetError(msg))
+      setResetStatus('error')
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-sm">
@@ -69,66 +90,133 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8">
-          <h2 className="mb-6 text-lg font-semibold text-white">
-            {mode === 'login' ? 'Sign in' : 'Create account'}
-          </h2>
+          {showReset ? (
+            <>
+              <h2 className="mb-2 text-lg font-semibold text-white">Reset password</h2>
+              <p className="mb-6 text-sm text-slate-400">
+                Enter your email and we&apos;ll send you a reset link.
+              </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-              />
-            </div>
+              {resetStatus === 'sent' ? (
+                <div className="rounded-lg bg-emerald-950 px-3 py-3 text-sm text-emerald-400">
+                  Password reset email sent. Check your inbox.
+                </div>
+              ) : (
+                <form onSubmit={handlePasswordReset} className="flex flex-col gap-4" noValidate>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="reset-email" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                      Email
+                    </label>
+                    <input
+                      id="reset-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                    />
+                  </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-              />
-            </div>
+                  {resetStatus === 'error' && (
+                    <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{resetError}</p>
+                  )}
 
-            {error && (
-              <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
-            )}
+                  <button
+                    type="submit"
+                    disabled={resetStatus === 'sending'}
+                    className="mt-2 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {resetStatus === 'sending' ? 'Sending…' : 'Send reset link'}
+                  </button>
+                </form>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
-            </button>
-          </form>
+              <p className="mt-6 text-center text-sm text-slate-500">
+                <button
+                  onClick={() => { setShowReset(false); setResetStatus('idle'); setResetError('') }}
+                  className="font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="mb-6 text-lg font-semibold text-white">
+                {mode === 'login' ? 'Sign in' : 'Create account'}
+              </h2>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
-            <button
-              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-              className="font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
-            >
-              {mode === 'login' ? 'Sign up' : 'Sign in'}
-            </button>
-          </p>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="email" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="password" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                  />
+                  {mode === 'login' && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => { setShowReset(true); setResetEmail(email); setResetStatus('idle'); setResetError('') }}
+                        className="text-xs text-slate-500 hover:text-slate-300"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-slate-500">
+                {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
+                <button
+                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+                  className="font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
+                >
+                  {mode === 'login' ? 'Sign up' : 'Sign in'}
+                </button>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </main>
@@ -145,4 +233,14 @@ function friendlyError(msg: string): string {
   if (msg.includes('invalid-email'))
     return 'Please enter a valid email address.'
   return 'Something went wrong. Please try again.'
+}
+
+function friendlyResetError(msg: string): string {
+  if (msg.includes('user-not-found'))
+    return 'No account found with that email address.'
+  if (msg.includes('invalid-email'))
+    return 'Please enter a valid email address.'
+  if (msg.includes('too-many-requests'))
+    return 'Too many attempts. Please try again later.'
+  return 'Failed to send reset email. Please try again.'
 }
