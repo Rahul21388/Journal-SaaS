@@ -62,7 +62,7 @@ function History() {
   const filtered = filter === 'all' ? entries : entries.filter((e) => e.mood === filter)
 
   return (
-    <>
+    <div className="pt-[env(safe-area-inset-top)]">
       <NavBar />
       <main className="mx-auto max-w-4xl px-4 py-10">
         <header className="mb-8">
@@ -148,6 +148,6 @@ function History() {
           </div>
         )}
       </main>
-    </>
+    </div>
   )
 }

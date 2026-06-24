@@ -151,7 +151,7 @@ function SearchView() {
   }
 
   return (
-    <>
+    <div className="pt-[env(safe-area-inset-top)]">
       <NavBar />
       <main className="mx-auto max-w-3xl px-4 py-10">
         <header className="mb-8">
@@ -219,7 +219,7 @@ function SearchView() {
           </div>
         )}
       </main>
-    </>
+    </div>
   )
 }
 

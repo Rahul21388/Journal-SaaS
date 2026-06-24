@@ -124,7 +124,7 @@ function UpgradeFlow() {
   }
 
   return (
-    <>
+    <div className="pt-[env(safe-area-inset-top)]">
       <NavBar />
       <main className="mx-auto max-w-lg px-4 py-16">
         <div className="rounded-2xl border-2 border-indigo-600 bg-slate-900 p-10">
@@ -198,7 +198,7 @@ function UpgradeFlow() {
           </Link>
         </p>
       </main>
-    </>
+    </div>
   )
 }
 

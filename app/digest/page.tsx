@@ -166,7 +166,7 @@ function DigestView() {
   }
 
   return (
-    <>
+    <div className="pt-[env(safe-area-inset-top)]">
       <NavBar />
       <main className="mx-auto max-w-6xl px-4 py-10">
         {/* Header */}
@@ -257,7 +257,7 @@ function DigestView() {
           </div>
         )}
       </main>
-    </>
+    </div>
   )
 }
 
