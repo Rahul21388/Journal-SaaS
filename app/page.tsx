@@ -55,7 +55,7 @@ const FEATURES = [
   {
     icon: '🤖',
     title: 'AI weekly digest',
-    desc: `Claude reads your week and reflects it back — patterns you'd never notice yourself.`,
+    desc: `Our AI reads your week and reflects it back — patterns you'd never notice yourself.`,
     pro: true,
   },
   {
@@ -92,7 +92,7 @@ const STEPS = [
   },
   {
     icon: '🤖',
-    title: 'Claude analyses',
+    title: 'AI analyses',
     desc: 'Every Sunday, AI reads your entries and finds patterns.',
   },
   {
@@ -110,7 +110,7 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   'Everything in Free',
-  'AI weekly digest (Claude)',
+  'AI weekly digest',
   'Mood chart + calendar heatmap',
   'Full-text search',
   'Email + push notifications',
@@ -229,7 +229,7 @@ function Hero() {
             className="mt-6 max-w-xl text-lg leading-relaxed text-slate-400"
             style={{ animation: 'fadeUp 0.5s ease 200ms both' }}
           >
-            Write every day. Every Sunday, Claude AI analyses your week and sends
+            Write every day. Every Sunday, our AI analyses your week and sends
             you a personal digest — mood trends, patterns, and gentle insights.
           </p>
 
