@@ -129,7 +129,7 @@ function PublicNav() {
 
   return (
     <nav
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] transition-all duration-300 ${
         scrolled
           ? 'border-b border-slate-800 bg-slate-950/95 backdrop-blur'
           : 'bg-transparent'
@@ -521,7 +521,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-950 pt-[env(safe-area-inset-top)] text-slate-100" style={{ scrollBehavior: 'smooth' }}>
+    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ scrollBehavior: 'smooth' }}>
       <PublicNav />
       <Hero />
       <Features />
