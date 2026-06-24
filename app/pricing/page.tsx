@@ -46,7 +46,7 @@ export default function PricingPage() {
   useEffect(() => { document.title = 'Pricing | Daily Journal' }, [])
 
   return (
-    <>
+    <div className="pt-[env(safe-area-inset-top)]">
       <NavBar />
       <main className="mx-auto max-w-4xl px-4 py-16">
         {/* Heading */}
@@ -222,6 +222,6 @@ export default function PricingPage() {
           </a>
         </p>
       </main>
-    </>
+    </div>
   )
 }

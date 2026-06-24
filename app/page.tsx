@@ -521,7 +521,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ scrollBehavior: 'smooth' }}>
+    <div className="min-h-screen bg-slate-950 pt-[env(safe-area-inset-top)] text-slate-100" style={{ scrollBehavior: 'smooth' }}>
       <PublicNav />
       <Hero />
       <Features />
