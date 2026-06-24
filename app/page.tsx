@@ -143,13 +143,13 @@ function PublicNav() {
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-white"
+            className="hidden rounded-lg px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-white sm:block"
           >
             Sign in
           </Link>
           <Link
             href="/login"
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            className="rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-500 sm:px-4 sm:py-2"
           >
             Get started free
           </Link>
@@ -213,14 +213,6 @@ function Hero() {
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-16 lg:flex-row lg:gap-12">
         {/* Left — text */}
         <div className="flex-1 text-center lg:text-left">
-          <div
-            className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-800/60 bg-indigo-950/50 px-4 py-1.5 text-xs font-medium text-indigo-300"
-            style={{ animation: 'fadeUp 0.5s ease 0ms both' }}
-          >
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-400" />
-            Powered by Claude AI
-          </div>
-
           <h1
             className="mt-2 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl"
             style={{ animation: 'fadeUp 0.5s ease 100ms both' }}
