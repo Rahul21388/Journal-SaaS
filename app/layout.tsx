@@ -7,10 +7,10 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mydiary.rahulprakash
 
 export const metadata: Metadata = {
   title: {
-    default: 'DailyJournal — Your private journal with AI insights',
-    template: '%s · DailyJournal',
+    default: 'Daily Journal',
+    template: '%s | Daily Journal',
   },
-  description: 'Your private journal with AI-powered weekly insights',
+  description: 'Your private AI-powered journal',
   metadataBase: new URL(APP_URL),
   openGraph: {
     title: 'DailyJournal — Your private journal with AI insights',
