@@ -21,7 +21,7 @@ export default function NavBar() {
   const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const { features } = useUserProfile()
+  const { features, isPro } = useUserProfile()
 
   // Build nav links — Search only shown to Pro users
   const NAV_LINKS = BASE_NAV_LINKS.filter((l) => !l.proOnly || features.fullTextSearch)
@@ -71,7 +71,14 @@ export default function NavBar() {
             </Link>
           ))}
           {email && (
-            <span className="ml-2 text-xs text-slate-500">{email}</span>
+            <span className="ml-2 flex items-center gap-1.5">
+              {isPro && (
+                <span className="rounded-full bg-[#6d28d9] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  PRO
+                </span>
+              )}
+              <span className="text-xs text-slate-500">{email}</span>
+            </span>
           )}
           <button
             onClick={handleSignOut}
@@ -114,7 +121,12 @@ export default function NavBar() {
             </Link>
           ))}
           {email && (
-            <p className="px-4 py-2 text-xs text-slate-600 border-b border-slate-800">
+            <p className="flex items-center gap-1.5 border-b border-slate-800 px-4 py-2 text-xs text-slate-600">
+              {isPro && (
+                <span className="rounded-full bg-[#6d28d9] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  PRO
+                </span>
+              )}
               {email}
             </p>
           )}
