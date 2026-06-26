@@ -123,6 +123,10 @@ function Dashboard() {
               saving={saving}
             />
 
+            <p className="text-center text-xs text-slate-600">
+              🔒 Private &amp; secure — only you can see this.
+            </p>
+
             {/* StatsBar — available to all users */}
             <StatsBar entries={allEntries} />
 

@@ -8,6 +8,8 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  signOut,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { ensureUserProfile } from '@/lib/userProfile'
@@ -20,10 +22,10 @@ export default function LoginPage() {
 
   useEffect(() => { document.title = 'Login | Daily Journal' }, [])
 
-  // Redirect already-authenticated users away from /login
+  // Redirect already-authenticated verified users away from /login
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) router.replace('/dashboard')
+      if (user?.emailVerified) router.replace('/dashboard')
     })
     return unsub
   }, [router])
@@ -33,6 +35,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Verification state
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState('')
+  const [unverifiedPassword, setUnverifiedPassword] = useState('')
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  // Password reset state
   const [showReset, setShowReset] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
@@ -44,25 +53,44 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      let uid: string
-      if (mode === 'login') {
-        const cred = await signInWithEmailAndPassword(auth, email, password)
-        uid = cred.user.uid
-      } else {
+      if (mode === 'register') {
         const cred = await createUserWithEmailAndPassword(auth, email, password)
-        uid = cred.user.uid
+        await sendEmailVerification(cred.user)
+        await signOut(auth)
+        setVerificationSent(true)
+        setUnverifiedEmail(email)
+        setUnverifiedPassword(password)
+      } else {
+        const cred = await signInWithEmailAndPassword(auth, email, password)
+        if (!cred.user.emailVerified) {
+          await signOut(auth)
+          setUnverifiedEmail(email)
+          setUnverifiedPassword(password)
+          setError('unverified')
+          return
+        }
+        // Ensure UserProfile exists with free plan (idempotent)
+        await ensureUserProfile(cred.user.uid, email)
+        router.replace('/dashboard')
       }
-
-      // Ensure UserProfile exists with free plan (idempotent)
-      await ensureUserProfile(uid, email)
-
-      router.replace('/dashboard')
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.'
       setError(friendlyError(msg))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending')
+    try {
+      const cred = await signInWithEmailAndPassword(auth, unverifiedEmail, unverifiedPassword)
+      await sendEmailVerification(cred.user)
+      await signOut(auth)
+      setResendStatus('sent')
+    } catch {
+      setResendStatus('idle')
     }
   }
 
@@ -90,7 +118,28 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8">
-          {showReset ? (
+          {/* ── Verification sent screen ── */}
+          {verificationSent ? (
+            <>
+              <div className="mb-4 text-center text-3xl">📬</div>
+              <h2 className="mb-3 text-center text-lg font-semibold text-white">Check your inbox</h2>
+              <p className="text-sm text-slate-400 text-center leading-relaxed">
+                We&apos;ve sent a verification link to{' '}
+                <span className="text-slate-200">{unverifiedEmail}</span>. Please check your inbox
+                (and Spam folder) and verify before signing in.
+              </p>
+              <p className="mt-6 text-center text-sm text-slate-500">
+                <button
+                  onClick={() => { setVerificationSent(false); setMode('login'); setEmail(unverifiedEmail); setPassword('') }}
+                  className="font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </p>
+            </>
+
+          ) : showReset ? (
+            /* ── Password reset screen ── */
             <>
               <h2 className="mb-2 text-lg font-semibold text-white">Reset password</h2>
               <p className="mb-6 text-sm text-slate-400">
@@ -142,7 +191,9 @@ export default function LoginPage() {
                 </button>
               </p>
             </>
+
           ) : (
+            /* ── Sign in / Create account ── */
             <>
               <h2 className="mb-6 text-lg font-semibold text-white">
                 {mode === 'login' ? 'Sign in' : 'Create account'}
@@ -193,9 +244,35 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                {error && (
-                  <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
+                {/* Privacy reassurance — sign-up only */}
+                {mode === 'register' && (
+                  <p className="text-center text-sm text-slate-400">
+                    🔒 Your entries are private. No one reads your journal — not even us.
+                  </p>
                 )}
+
+                {/* Error messages */}
+                {error === 'unverified' ? (
+                  <div className="flex flex-col gap-2 rounded-lg bg-amber-950 px-3 py-3">
+                    <p className="text-sm text-amber-300">
+                      Please verify your email before signing in. Check your inbox for the verification link.
+                    </p>
+                    {resendStatus === 'sent' ? (
+                      <p className="text-sm text-emerald-400">Verification email resent.</p>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={resendStatus === 'sending'}
+                        onClick={handleResendVerification}
+                        className="w-fit text-xs font-medium text-amber-400 underline underline-offset-2 hover:text-amber-200 disabled:opacity-50"
+                      >
+                        {resendStatus === 'sending' ? 'Sending…' : 'Resend verification email'}
+                      </button>
+                    )}
+                  </div>
+                ) : error ? (
+                  <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
+                ) : null}
 
                 <button
                   type="submit"
@@ -209,7 +286,7 @@ export default function LoginPage() {
               <p className="mt-6 text-center text-sm text-slate-500">
                 {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
                 <button
-                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setVerificationSent(false) }}
                   className="font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
                 >
                   {mode === 'login' ? 'Sign up' : 'Sign in'}

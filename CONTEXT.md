@@ -238,4 +238,4 @@
 
 ---
 
-_Last updated: 5th June 2026 — End of Day 10, Day 11 in progress_
+_Last updated: 26th June 2026 — Email verification on sign-up added. Privacy reassurance messages added to sign-up and dashboard._
