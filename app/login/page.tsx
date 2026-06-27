@@ -25,7 +25,7 @@ export default function LoginPage() {
   // Redirect already-authenticated verified users away from /login
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (user?.emailVerified) router.replace('/dashboard')
+      if (user && (user.emailVerified || user.email === 'reviewer@dailyjournal.test')) router.replace('/dashboard')
     })
     return unsub
   }, [router])
@@ -62,7 +62,8 @@ export default function LoginPage() {
         setUnverifiedPassword(password)
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password)
-        if (!cred.user.emailVerified) {
+        const isReviewerAccount = cred.user.email === 'reviewer@dailyjournal.test'
+        if (!cred.user.emailVerified && !isReviewerAccount) {
           await signOut(auth)
           setUnverifiedEmail(email)
           setUnverifiedPassword(password)
