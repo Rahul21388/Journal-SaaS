@@ -14,6 +14,7 @@
     "expo-server-sdk": "^3.15.0",
     "firebase": "^10.12.2",
     "firebase-admin": "^12.7.0",
+    "lucide-react": "^1.22.0",
     "next": "14.2.5",
     "posthog-js": "^1.143.0",
     "react": "^18",
