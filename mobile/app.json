@@ -3,7 +3,7 @@
     "name": "Daily Journal",
     "slug": "daily-journal-ai",
     "scheme": "dailyjournal",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -25,12 +25,12 @@
         "backgroundColor": "#020617"
       },
       "package": "com.rahulprakash.dailyjournal",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "INTERNET",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE"
-      ],
+      ]
       },
     "web": {
       "favicon": "./assets/favicon.png"
