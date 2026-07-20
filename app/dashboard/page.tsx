@@ -81,10 +81,10 @@ function Dashboard() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const handleSave = async (content: string, mood: Mood) => {
+  const handleSave = async (content: string, mood: Mood, tags: string[]) => {
     if (!uid) return
     setSaving(true)
-    await saveEntry(uid, today, content, mood)
+    await saveEntry(uid, today, content, mood, tags)
     await fetchData()
     setLastSavedAt(new Date())
     setSaving(false)
@@ -117,6 +117,7 @@ function Dashboard() {
             <EntryEditor
               initialContent={entry?.content ?? ''}
               initialMood={entry?.mood ?? 'neutral'}
+              initialTags={entry?.tags ?? []}
               isEdit={!!entry}
               lastSavedAt={lastSavedAt}
               onSave={handleSave}

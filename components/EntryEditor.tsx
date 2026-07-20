@@ -1,8 +1,11 @@
 // FILE: components/EntryEditor.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Mood } from '@/lib/types'
+
+const MAX_TAGS = 5
+const MAX_TAG_LEN = 20
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: 'great',    emoji: '😄', label: 'Great'    },
@@ -15,15 +18,17 @@ const MOODS: { value: Mood; emoji: string; label: string }[] = [
 interface Props {
   initialContent?: string
   initialMood?: Mood
+  initialTags?: string[]
   isEdit?: boolean
   lastSavedAt?: Date | null
-  onSave: (content: string, mood: Mood) => Promise<void>
+  onSave: (content: string, mood: Mood, tags: string[]) => Promise<void>
   saving?: boolean
 }
 
 export default function EntryEditor({
   initialContent = '',
   initialMood = 'neutral',
+  initialTags = [],
   isEdit = false,
   lastSavedAt = null,
   onSave,
@@ -31,16 +36,37 @@ export default function EntryEditor({
 }: Props) {
   const [content, setContent] = useState(initialContent)
   const [mood, setMood] = useState<Mood>(initialMood)
+  const [tags, setTags] = useState<string[]>(initialTags)
+  const [tagInput, setTagInput] = useState('')
   const [toast, setToast] = useState(false)
+  const tagInputRef = useRef<HTMLInputElement>(null)
 
   const canSave = content.trim().length >= 10
 
   const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length
 
+  const addTag = (raw: string) => {
+    const tag = raw.toLowerCase().trim().slice(0, MAX_TAG_LEN)
+    if (!tag || tags.includes(tag) || tags.length >= MAX_TAGS) return
+    setTags((prev) => [...prev, tag])
+  }
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(tagInput)
+      setTagInput('')
+    } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1))
+    }
+  }
+
+  const removeTag = (tag: string) => setTags((prev) => prev.filter((t) => t !== tag))
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSave) return
-    await onSave(content, mood)
+    await onSave(content, mood, tags)
     setToast(true)
     setTimeout(() => setToast(false), 2000)
   }
@@ -88,6 +114,47 @@ export default function EntryEditor({
         <p className="text-right text-xs text-slate-600">
           {content.length} character{content.length !== 1 ? 's' : ''} · {wordCount} word{wordCount !== 1 ? 's' : ''}
         </p>
+      </div>
+
+      {/* Tags */}
+      <div>
+        <p className="mb-2 text-sm font-medium text-slate-400">
+          Tags <span className="font-normal text-slate-600">(optional · up to {MAX_TAGS})</span>
+        </p>
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 focus-within:border-slate-500 cursor-text"
+          onClick={() => tagInputRef.current?.focus()}
+        >
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="flex items-center gap-1 rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-200"
+            >
+              #{tag}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeTag(tag) }}
+                className="text-slate-400 hover:text-white leading-none"
+                aria-label={`Remove tag ${tag}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {tags.length < MAX_TAGS && (
+            <input
+              ref={tagInputRef}
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value.replace(',', ''))}
+              onKeyDown={handleTagKeyDown}
+              onBlur={() => { if (tagInput.trim()) { addTag(tagInput); setTagInput('') } }}
+              placeholder={tags.length === 0 ? 'Add a tag and press Enter…' : ''}
+              className="flex-1 min-w-[120px] bg-transparent text-sm text-slate-100 placeholder-slate-600 outline-none"
+              maxLength={MAX_TAG_LEN + 1}
+            />
+          )}
+        </div>
       </div>
 
       {/* Footer */}

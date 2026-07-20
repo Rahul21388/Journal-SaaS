@@ -3,6 +3,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
   collection,
   query,
   orderBy,
@@ -19,21 +20,28 @@ export async function saveEntry(
   uid: string,
   date: string,
   content: string,
-  mood: Mood
+  mood: Mood,
+  tags?: string[]
 ): Promise<void> {
   const ref = doc(db, 'users', uid, 'entries', date)
   const existing = await getDoc(ref)
   const now = Timestamp.now()
+  const tagData = tags !== undefined ? { tags } : {}
 
   if (existing.exists()) {
-    await setDoc(ref, { content, mood, updatedAt: now }, { merge: true })
+    await setDoc(ref, { content, mood, updatedAt: now, ...tagData }, { merge: true })
   } else {
     await setDoc(
       ref,
-      { uid, date, content, mood, createdAt: now, updatedAt: now },
+      { uid, date, content, mood, createdAt: now, updatedAt: now, ...tagData },
       { merge: true }
     )
   }
+}
+
+export async function saveAnchorNote(uid: string, anchorNote: string): Promise<void> {
+  const ref = doc(db, 'users', uid)
+  await updateDoc(ref, { anchorNote: anchorNote.trim() })
 }
 
 export async function getEntry(uid: string, date: string): Promise<Entry | null> {

@@ -87,7 +87,8 @@ export default async function handler(
       .filter((e) => !e.deleted)
 
     // ── Generate digest ───────────────────────────────────────────────────
-    const content = await generateDigest(entries)
+    const anchorNote = userSnap.data()?.anchorNote as string | undefined
+    const content = await generateDigest(entries, anchorNote)
 
     // ── Persist digest ────────────────────────────────────────────────────
     const moodSummary: Mood[] = entries.map((e) => e.mood)

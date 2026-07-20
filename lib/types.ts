@@ -8,6 +8,7 @@ export interface Entry {
   date: string
   content: string
   mood: Mood
+  tags?: string[]
   createdAt: Timestamp
   updatedAt: Timestamp
   deleted?: boolean
@@ -21,6 +22,7 @@ export interface UserProfile {
   uid: string
   email: string
   plan: Plan
+  anchorNote?: string
   billingRegion?: BillingRegion
   subscriptionStatus?: SubscriptionStatus
   subscriptionId?: string

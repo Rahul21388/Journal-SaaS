@@ -48,6 +48,20 @@ export default function EntryCard({ entry }: Props) {
         </p>
       </div>
 
+      {/* Tags */}
+      {entry.tags && entry.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {entry.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-400"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* View / Collapse toggle */}
       {hasMore && (
         <button

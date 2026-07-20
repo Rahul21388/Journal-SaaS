@@ -14,6 +14,7 @@ export interface Entry {
   date: string
   content: string
   mood: 'great' | 'good' | 'neutral' | 'bad' | 'terrible'
+  tags?: string[]
   deleted?: boolean
 }
 
@@ -29,7 +30,7 @@ function getClient(): Anthropic {
   return new Anthropic({ apiKey })
 }
 
-export async function generateDigest(entries: Entry[]): Promise<string> {
+export async function generateDigest(entries: Entry[], anchorNote?: string): Promise<string> {
   if (entries.length === 0) {
     return 'No entries found for this week.'
   }
@@ -41,12 +42,17 @@ export async function generateDigest(entries: Entry[]): Promise<string> {
       const dateLabel = d.toLocaleDateString('en-US', {
         weekday: 'long', month: 'long', day: 'numeric',
       })
-      return `Date: ${dateLabel}\nMood: ${MOOD_LABEL[e.mood]}\nEntry:\n${e.content}`
+      const tagLine = e.tags && e.tags.length > 0 ? `\nTags: ${e.tags.join(', ')}` : ''
+      return `Date: ${dateLabel}\nMood: ${MOOD_LABEL[e.mood]}${tagLine}\nEntry:\n${e.content}`
     })
     .join('\n\n---\n\n')
 
-  const prompt = `You are a warm, insightful journaling companion. Below are someone's journal entries from the past week. Read them carefully and write a weekly digest for them.
+  const anchorSection = anchorNote?.trim()
+    ? `\nCONTEXT ABOUT THIS PERSON:\n${anchorNote.trim()}\n`
+    : ''
 
+  const prompt = `You are a warm, insightful journaling companion. Below are someone's journal entries from the past week. Read them carefully and write a weekly digest for them.
+${anchorSection}
 JOURNAL ENTRIES:
 ${entryText}
 

@@ -14,6 +14,7 @@ const BASE_NAV_LINKS = [
   { href: '/pricing',   label: 'Pricing',   proOnly: false },
   { href: '/search',    label: 'Search',    proOnly: true  },
   { href: '/digest',    label: 'Digest',    proOnly: false },
+  { href: '/settings',  label: 'Settings',  proOnly: false },
 ]
 
 export default function NavBar() {
