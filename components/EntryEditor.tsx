@@ -1,11 +1,12 @@
 // FILE: components/EntryEditor.tsx
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import type { Mood } from '@/lib/types'
 
 const MAX_TAGS = 5
 const MAX_TAG_LEN = 20
+const VOICE_SILENCE_TIMEOUT_MS = 60_000
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: 'great',    emoji: '😄', label: 'Great'    },
@@ -15,6 +16,37 @@ const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: 'terrible', emoji: '😢', label: 'Terrible' },
 ]
 
+// ── Web Speech API type shim (not in TS lib) ──────────────────────────────────
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+  resultIndex: number
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+}
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start(): void
+  stop(): void
+  onresult: ((e: SpeechRecognitionEvent) => void) | null
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionInstance
+    webkitSpeechRecognition?: new () => SpeechRecognitionInstance
+  }
+}
+
+function getSpeechRecognition(): (new () => SpeechRecognitionInstance) | null {
+  if (typeof window === 'undefined') return null
+  return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
   initialContent?: string
   initialMood?: Mood
@@ -41,8 +73,128 @@ export default function EntryEditor({
   const [toast, setToast] = useState(false)
   const tagInputRef = useRef<HTMLInputElement>(null)
 
-  const canSave = content.trim().length >= 10
+  // ── Voice state ───────────────────────────────────────────────────────────
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [micError, setMicError] = useState<string | null>(null)
 
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const interimRef = useRef<string>('')       // current interim transcript
+  const baseContentRef = useRef<string>('')   // content before interim was appended
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setSpeechSupported(getSpeechRecognition() !== null)
+  }, [])
+
+  const stopListening = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+    interimRef.current = ''
+    recognitionRef.current?.stop()
+    recognitionRef.current = null
+    setListening(false)
+  }, [])
+
+  const startListening = useCallback(() => {
+    const SR = getSpeechRecognition()
+    if (!SR) return
+    setMicError(null)
+
+    const rec = new SR()
+    rec.continuous = true
+    rec.interimResults = true
+    rec.lang = navigator.language || 'en-US'
+
+    // Snapshot the current textarea content so we can append to it cleanly
+    baseContentRef.current = content
+    interimRef.current = ''
+
+    rec.onresult = (e: SpeechRecognitionEvent) => {
+      // Reset silence timer on every result
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = setTimeout(stopListening, VOICE_SILENCE_TIMEOUT_MS)
+
+      let interim = ''
+      let finalChunk = ''
+
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript
+        if (e.results[i].isFinal) {
+          finalChunk += transcript
+        } else {
+          interim += transcript
+        }
+      }
+
+      if (finalChunk) {
+        // Commit the final chunk: append with a space if base doesn't end in whitespace
+        const base = baseContentRef.current
+        const separator = base.length > 0 && !/\s$/.test(base) ? ' ' : ''
+        baseContentRef.current = base + separator + finalChunk
+        interimRef.current = ''
+      }
+
+      interimRef.current = interim
+
+      // Show base + current interim in the textarea
+      const displayed = interimRef.current
+        ? baseContentRef.current + (baseContentRef.current.length > 0 && !/\s$/.test(baseContentRef.current) ? ' ' : '') + interimRef.current
+        : baseContentRef.current
+      setContent(displayed)
+    }
+
+    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        setMicError('Microphone access denied — you can enable it in browser settings.')
+      }
+      stopListening()
+    }
+
+    rec.onend = () => {
+      // Flush any remaining interim as content
+      if (interimRef.current) {
+        const base = baseContentRef.current
+        const separator = base.length > 0 && !/\s$/.test(base) ? ' ' : ''
+        setContent(base + separator + interimRef.current)
+        interimRef.current = ''
+      }
+      setListening(false)
+    }
+
+    recognitionRef.current = rec
+    rec.start()
+    setListening(true)
+
+    // Auto-stop safety timer
+    silenceTimerRef.current = setTimeout(stopListening, VOICE_SILENCE_TIMEOUT_MS)
+  }, [content, stopListening])
+
+  // Keep baseContentRef in sync when user types manually (not during recognition)
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value
+    setContent(val)
+    if (!listening) baseContentRef.current = val
+  }
+
+  const toggleListening = () => {
+    if (listening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      recognitionRef.current?.stop()
+    }
+  }, [])
+
+  // ── Tags ──────────────────────────────────────────────────────────────────
+  const canSave = content.trim().length >= 10
   const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length
 
   const addTag = (raw: string) => {
@@ -66,6 +218,7 @@ export default function EntryEditor({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSave) return
+    if (listening) stopListening()
     await onSave(content, mood, tags)
     setToast(true)
     setTimeout(() => setToast(false), 2000)
@@ -101,16 +254,65 @@ export default function EntryEditor({
 
       {/* Textarea */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="entry" className="text-sm font-medium text-slate-400">
-          What&apos;s on your mind?
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="entry" className="text-sm font-medium text-slate-400">
+            What&apos;s on your mind?
+          </label>
+          {/* Mic button — only rendered when browser supports Speech API */}
+          {speechSupported && (
+            <div className="flex items-center gap-2">
+              {listening && (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-rose-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                  </span>
+                  Listening…
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={toggleListening}
+                aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                title={listening ? 'Stop voice input' : 'Dictate entry'}
+                className={`flex items-center justify-center rounded-lg border p-2 transition-all ${
+                  listening
+                    ? 'border-rose-700 bg-rose-950 text-rose-400 hover:bg-rose-900'
+                    : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                }`}
+              >
+                {listening ? (
+                  /* Stop icon */
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                ) : (
+                  /* Mic icon */
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <rect x="9" y="2" width="6" height="12" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                    <line x1="8" y1="22" x2="16" y2="22" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
         <textarea
+          ref={textareaRef}
           id="entry"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           placeholder="Write freely — this space is just for you…"
           className="min-h-[60vh] w-full resize-y rounded-xl border border-slate-700 bg-slate-900 p-4 text-base text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
         />
+
+        {micError && (
+          <p className="text-xs text-amber-500">{micError}</p>
+        )}
+
         <p className="text-right text-xs text-slate-600">
           {content.length} character{content.length !== 1 ? 's' : ''} · {wordCount} word{wordCount !== 1 ? 's' : ''}
         </p>
